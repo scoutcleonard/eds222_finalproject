@@ -1,0 +1,71 @@
+---
+title: "Blog Post"
+author: "Scout Leonard"
+date: "11/16/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(here)
+library(lubridate)
+library(tidyverse)
+library(zoo)
+```
+
+#My Question:
+
+#Data Description
+```{r}
+#read in the monthly lunch data 
+usda_monthly <- read.csv(here("data", "usda_monthly_data_tidy.csv"))
+```
+
+```{r}
+#change first column name 
+colnames(usda_monthly)[1] <- "month"
+
+#delete the weird columns that got added between downloading the raw data to my 
+#local computer and reading it to .Rmd
+usda_monthly <- select(usda_monthly, -c("X", "X.1"))
+
+#change last column name
+colnames(usda_monthly)[9] <- "fiscal_year"
+```
+
+```{r}
+#remove percent signs from percent_free_of_total_lunches and 
+#percent_reduced_price_of_total_lunches columns
+usda_monthly <- usda_monthly %>% 
+ mutate(percent_free_of_total_lunches = gsub('%','', percent_free_of_total_lunches)) %>% 
+  mutate(percent_reduced_price_of_total_lunches = gsub('%','', percent_reduced_price_of_total_lunches)) %>% 
+  mutate(month = gsub("-", " ", month))
+
+#convert month column to class datetime from class character
+usda_monthly <- usda_monthly %>% 
+  mutate("month" = zoo::as.yearmon(month, "%y %b"))
+```
+
+```{r}
+#check class of all columns
+lapply(usda_monthly, class)
+
+#apply numeric to character columns
+usda_monthly <- usda_monthly %>% 
+  mutate_if(is.character, as.numeric)
+
+#check to see if class conversion worked 
+lapply(usda_monthly, class)
+```
+
+
+```{r}
+#plots 
+
+ggplot(data = usda_monthly, aes(x = month, y = total_lunches_served)) +
+  geom_line()
+```
+
