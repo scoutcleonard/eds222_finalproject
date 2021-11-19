@@ -6,7 +6,7 @@ output: html_document
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE)
 ```
 
 ```{r}
@@ -16,9 +16,16 @@ library(tidyverse)
 library(zoo)
 ```
 
-#My Question:
+# My Question:
 
-#Data Description
+My analysis seeks to explore the questions: Are there seasonal trends in how U.S. school food programs feed students? How did this trend change in 2020 during school closures from the Covid-19 pandemic? 
+
+## Background
+
+The National School Lunch Program (NSLP) is an enormous food system with enormous implications for equity in American K-12 education systems. Every day, NSLP provides ~30 million children school lunch at free or reduced prices (1). 
+
+# Data Description
+
 ```{r}
 #read in the monthly lunch data 
 usda_monthly <- read.csv(here("data", "usda_monthly_data_tidy.csv"))
@@ -69,3 +76,19 @@ ggplot(data = usda_monthly, aes(x = month, y = total_lunches_served)) +
   geom_line()
 ```
 
+# Analysis Plan
+
+```{r}
+# df = usda_monthly[, c("month", "total_lunches_served")]
+# 
+# df = df %>% mutate(ma = slider::slide2_dbl(.x = month, .y = total_lunches_served, .f = mean, .before = 2, .after = 2, .complete = TRUE)
+```
+
+
+#Summarize results visually and in words
+
+#Next steps and future directions
+
+#References
+
+(1) https://www.ers.usda.gov/topics/food-nutrition-assistance/child-nutrition-programs/national-school-lunch-program/ 
