@@ -14,6 +14,10 @@ library(here)
 library(lubridate)
 library(tidyverse)
 library(zoo)
+library(feasts)
+library(tsibble)
+
+options(scipen = 999)
 ```
 
 # My Question:
@@ -71,19 +75,37 @@ lapply(usda_monthly, class)
 
 ```{r}
 #plots 
-
 ggplot(data = usda_monthly, aes(x = month, y = total_lunches_served)) +
-  geom_line()
+  geom_line() +
+  theme_minimal()
 ```
 
 # Analysis Plan
 
 ```{r}
-# df = usda_monthly[, c("month", "total_lunches_served")]
-# 
-# df = df %>% mutate(ma = slider::slide2_dbl(.x = month, .y = total_lunches_served, .f = mean, .before = 2, .after = 2, .complete = TRUE)
+#confusingly, converting the data I want in my time series requires data of class `yearmonth` not `yearnon` I learned I can use `yearmonth()` from the tsibble package to make a happy tsibble
+usda_monthly <- usda_monthly %>% 
+  mutate(month_tsib = yearmonth(month))
+
+monthly_tsib <- usda_monthly %>%
+  select(c(month_tsib, total_lunches_served)) %>% 
+  as_tsibble()
 ```
 
+```{r}
+plot(monthly_tsib, type = "l")
+```
+
+```{r}
+decomp = monthly_tsib %>% 
+  model(
+    classical_decomposition(total_lunches_served, type = "additive")
+  ) %>% 
+  components()
+head(decomp)
+
+autoplot(decomp)
+```
 
 #Summarize results visually and in words
 
