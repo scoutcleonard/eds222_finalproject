@@ -107,10 +107,14 @@ head(decomp)
 autoplot(decomp)
 ```
 
-#Summarize results visually and in words
+```{r}
+acf(monthly_tsib, lag.max = 12)
+```
 
-#Next steps and future directions
+# Summarize results visually and in words
 
-#References
+# Next steps and future directions
+
+# References
 
 (1) https://www.ers.usda.gov/topics/food-nutrition-assistance/child-nutrition-programs/national-school-lunch-program/ 
