@@ -16,17 +16,20 @@ library(tidyverse)
 library(zoo)
 library(feasts)
 library(tsibble)
+library(patchwork)
 
 options(scipen = 999)
 ```
 
 # My Question:
 
-My analysis seeks to explore the questions: Are there seasonal trends in how U.S. school food programs feed students? How did this trend change in 2020 during school closures from the Covid-19 pandemic? 
+My analysis seeks to explore the questions: Is there seasonality in how U.S. school food programs feed students? What about long-term trends, and how did any trends change in 2020 during school closures from the Covid-19 pandemic? 
 
 ## Background
 
-The National School Lunch Program (NSLP) is an enormous food system with major implications for equity in American K-12 education systems. Every day, NSLP provides ~30 million children school lunch at free or reduced prices (1). 
+The National School Lunch Program (NSLP) is an enormous food system with major implications for equity in American K-12 education systems. Every day, NSLP provides ~30 million children school lunch at free or reduced prices (1). It operates in public and nonprofit private schools and residential childcare facilities (2). 
+
+To provide meals at free and reduced cost to students, participating school districts are reimbursed cash subsidies for every qualifying meal they serve. To qualify for subsidy, meals served by Nutrition Services operators must meet federal meal pattern policies which define meal content around qualifying food group combinations, sugar content, etc. 
 
 # Data Description
 
@@ -75,12 +78,22 @@ lapply(usda_monthly, class)
 
 ```{r}
 #plots 
-ggplot(data = usda_monthly, aes(x = month, y = total_lunches_served)) +
+total_lunches_initial <- ggplot(data = usda_monthly, aes(x = month, y = total_lunches_served)) +
   geom_line() +
   theme_minimal()
 ```
 
+```{r}
+percent_free_inital <- ggplot(data = usda_monthly, aes(x = month, y = percent_free_of_total_lunches)) +
+  geom_line() +
+  theme_minimal()
+
+total_lunches_initial / percent_free_inital
+```
+
 # Analysis Plan
+
+## Total Participation in NSLP
 
 ```{r}
 #confusingly, converting the data I want in my time series requires data of class `yearmonth` not `yearnon` I learned I can use `yearmonth()` from the tsibble package to make a happy tsibble
@@ -93,22 +106,45 @@ monthly_tsib <- usda_monthly %>%
 ```
 
 ```{r}
-plot(monthly_tsib, type = "l")
-```
-
-```{r}
-decomp = monthly_tsib %>% 
+total_decomp = monthly_tsib %>% 
   model(
     classical_decomposition(total_lunches_served, type = "additive")
   ) %>% 
   components()
-head(decomp)
+head(total_decomp)
 
-autoplot(decomp)
+total_auto <- autoplot(total_decomp)
 ```
 
 ```{r}
-acf(monthly_tsib, lag.max = 12)
+total_acf <- acf(monthly_tsib, lag.max = 12)
+
+total_auto 
+total_acf
+```
+
+
+## Participation of Free-Lunch Eligible Students 
+
+```{r}
+free_tsib <- usda_monthly %>% 
+  select(c(month_tsib, percent_free_of_total_lunches)) %>% 
+  as_tsibble()
+```
+
+```{r}
+free_decomp = free_tsib %>% 
+  model(
+    classical_decomposition(percent_free_of_total_lunches, type = "additive")
+  ) %>% 
+  components()
+head(free_decomp)
+
+autoplot(free_decomp)
+```
+
+```{r}
+acf(free_tsib, lag.max = 12)
 ```
 
 # Summarize results visually and in words
@@ -118,3 +154,4 @@ acf(monthly_tsib, lag.max = 12)
 # References
 
 (1) https://www.ers.usda.gov/topics/food-nutrition-assistance/child-nutrition-programs/national-school-lunch-program/ 
+(2) https://fns-prod.azureedge.net/sites/default/files/resource-files/NSLPFactSheet.pdf
