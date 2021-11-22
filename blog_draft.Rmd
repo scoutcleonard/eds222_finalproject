@@ -1,5 +1,5 @@
 ---
-title: "Blog Post"
+title: "USDA National School Lunch Program Time Series Analysis"
 author: "Scout Leonard"
 date: "11/16/2021"
 output: html_document
@@ -26,7 +26,7 @@ My analysis seeks to explore the questions: Are there seasonal trends in how U.S
 
 ## Background
 
-The National School Lunch Program (NSLP) is an enormous food system with enormous implications for equity in American K-12 education systems. Every day, NSLP provides ~30 million children school lunch at free or reduced prices (1). 
+The National School Lunch Program (NSLP) is an enormous food system with major implications for equity in American K-12 education systems. Every day, NSLP provides ~30 million children school lunch at free or reduced prices (1). 
 
 # Data Description
 
