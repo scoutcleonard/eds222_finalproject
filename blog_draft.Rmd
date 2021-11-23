@@ -31,12 +31,26 @@ The National School Lunch Program (NSLP) is an enormous food system with major i
 
 To provide meals at free and reduced cost to students, participating school districts are reimbursed cash subsidies for every qualifying meal they serve. To qualify for subsidy, meals served by Nutrition Services operators must meet federal meal pattern policies which define meal content around qualifying food group combinations, sugar content, etc. 
 
+![](lunch_image.jpg)
+
+**** something about impact of access to nutrition on student behavior and performace, with sources cited! 
+
 # Data Description
+
+The Food and Nutrition Services sector of the USDA offers [monthly and annual reports](https://www.fns.usda.gov/data-research) of national participation in the National School Lunch Program and other school meal programs subsidized by the USDA (breakfast, seamless summer, supper, and snacks). 
+
+To answer my questions...
+
+**My analysis seeks to explore the questions: Is there seasonality in how U.S. school food programs feed students? What about long-term trends, and how did any trends change in 2020 during school closures from the Covid-19 pandemic? **
+
+... I used the National Level Monthly Data for the National School Lunch Program, which comes in PDF and Excel formats which are public. I downloaded the Excel format of the monthly data and did some tidying in Excel to make sure the .csv version would be friendly with R! There were some formatting thing like merged cells that included titles, not observations, as rows, which I eliminated before downloading as a .csv in my R project. 
 
 ```{r}
 #read in the monthly lunch data 
 usda_monthly <- read.csv(here("data", "usda_monthly_data_tidy.csv"))
 ```
+
+Even after a little manipulation in excel, there were changes to be made for easier manipulation of my monthly lunch data dataframe. Here, I change the first column name from `fiscal_year` to `month`, which better represents the column information. Reading in the data mysteriously added 2 columns that were not in the downloaded csv; I remove them here. Finally, there is a second row representing the fiscal year, but this one is _actually_ the fiscal year. I change the name from `fiscal_year.1` to `fiscal_year`. Now the data is almost ready for some stats! 
 
 ```{r}
 #change first column name 
@@ -50,12 +64,14 @@ usda_monthly <- select(usda_monthly, -c("X", "X.1"))
 colnames(usda_monthly)[9] <- "fiscal_year"
 ```
 
+Before we get there, though, 
+
 ```{r}
 #remove percent signs from percent_free_of_total_lunches and 
 #percent_reduced_price_of_total_lunches columns
 usda_monthly <- usda_monthly %>% 
  mutate(percent_free_of_total_lunches = gsub('%','', percent_free_of_total_lunches)) %>% 
-  mutate(percent_reduced_price_of_total_lunches = gsub('%','', percent_reduced_price_of_total_lunches)) %>% 
+  mutate(percent_reduced_price_of_total_lunches = gsub('%','', percent_reduced_price_of_total_lunches)) %>%
   mutate(month = gsub("-", " ", month))
 
 #convert month column to class datetime from class character
