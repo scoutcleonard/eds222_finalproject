@@ -50,7 +50,7 @@ To answer my questions...
 usda_monthly <- read.csv(here("data", "usda_monthly_data_tidy.csv"))
 ```
 
-Even after a little manipulation in excel, there were changes to be made for easier manipulation of my monthly lunch data dataframe. Here, I change the first column name from `fiscal_year` to `month`, which better represents the column information. Reading in the data mysteriously added 2 columns that were not in the downloaded csv; I remove them here. Finally, there is a second row representing the fiscal year, but this one is _actually_ the fiscal year. I change the name from `fiscal_year.1` to `fiscal_year`. Now the data is almost ready for some stats! 
+Even after a little manipulation in excel, there were changes to be made for easier manipulation of my monthly lunch data dataframe. Here, I give columns more descriptive names, remove odd columns that were added to the dataframe when I read in the .csv, mutate columns to exclude "%" "-" or spaces that R cannot make sense of. 
 
 ```{r}
 #change first column name 
@@ -64,47 +64,53 @@ usda_monthly <- select(usda_monthly, -c("X", "X.1"))
 colnames(usda_monthly)[9] <- "fiscal_year"
 ```
 
-Before we get there, though, 
-
 ```{r}
 #remove percent signs from percent_free_of_total_lunches and 
 #percent_reduced_price_of_total_lunches columns
 usda_monthly <- usda_monthly %>% 
  mutate(percent_free_of_total_lunches = gsub('%','', percent_free_of_total_lunches)) %>% 
-  mutate(percent_reduced_price_of_total_lunches = gsub('%','', percent_reduced_price_of_total_lunches)) %>%
+  mutate(percent_reduced_price_of_total_lunches = gsub('%','',percent_reduced_price_of_total_lunches)) %>%
   mutate(month = gsub("-", " ", month))
+```
 
+Finally, I make sure the class of each column is correct. All of the columns were of class `numeric` when read in, so I mutated the `month` column to `yearmon` using the `zoo` package, and everything else to numeric. 
+
+```{r, results='hide'}
 #convert month column to class datetime from class character
 usda_monthly <- usda_monthly %>% 
   mutate("month" = zoo::as.yearmon(month, "%y %b"))
-```
 
-```{r}
 #check class of all columns
 lapply(usda_monthly, class)
 
-#apply numeric to character columns
+#the data in most of the columns is of class character, but needs to be numeric
 usda_monthly <- usda_monthly %>% 
   mutate_if(is.character, as.numeric)
-
-#check to see if class conversion worked 
-lapply(usda_monthly, class)
 ```
 
+Finally, to have an initial look at my data, I make simple line graphs here: 
 
 ```{r}
-#plots 
-total_lunches_initial <- ggplot(data = usda_monthly, aes(x = month, y = total_lunches_served)) +
-  geom_line() +
-  theme_minimal()
-```
+#total lunches served plot 
+total_lunches_testplot <- ggplot(data = usda_monthly, aes(x = month, y = total_lunches_served)) +
+  geom_line(color = "darkcyan") +
+  theme_minimal() +
+  labs(title = "NSLP Lunches Served (Monthly)",
+       x = "Month",
+       y = "Total Lunches Served")
 
-```{r}
-percent_free_inital <- ggplot(data = usda_monthly, aes(x = month, y = percent_free_of_total_lunches)) +
-  geom_line() +
-  theme_minimal()
+usda_monthly <- usda_monthly %>% 
+  mutate(total_free_lunches = total_lunches_served * percent_free_of_total_lunches)
 
-total_lunches_initial / percent_free_inital
+monthly_free_testplot <- ggplot(data = usda_monthly, aes(x = month, y = total_free_lunches)) +
+  geom_line(color = "darkcyan") +
+  theme_minimal() +
+  labs(title = "NSLP Free Lunches Served (Monthly)",
+       x = "Month",
+       y = "Total Lunches Served")
+
+total_lunches_testplot / monthly_free_testplot
+
 ```
 
 # Analysis Plan
@@ -112,7 +118,7 @@ total_lunches_initial / percent_free_inital
 ## Total Participation in NSLP
 
 ```{r}
-#confusingly, converting the data I want in my time series requires data of class `yearmonth` not `yearnon` I learned I can use `yearmonth()` from the tsibble package to make a happy tsibble
+#confusingly, converting the data I want in my time series requires data of class `yearmonth` not `yearmon` I learned I can use `yearmonth()` from the tsibble package to make a tsibble with the correct time class 
 usda_monthly <- usda_monthly %>% 
   mutate(month_tsib = yearmonth(month))
 
@@ -144,14 +150,14 @@ total_acf
 
 ```{r}
 free_tsib <- usda_monthly %>% 
-  select(c(month_tsib, percent_free_of_total_lunches)) %>% 
+  select(c(month_tsib, total_free_lunches)) %>% 
   as_tsibble()
 ```
 
 ```{r}
 free_decomp = free_tsib %>% 
   model(
-    classical_decomposition(percent_free_of_total_lunches, type = "additive")
+    classical_decomposition(total_free_lunches, type = "additive")
   ) %>% 
   components()
 head(free_decomp)
