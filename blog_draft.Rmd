@@ -17,6 +17,8 @@ library(zoo)
 library(feasts)
 library(tsibble)
 library(patchwork)
+library(grid)
+library(ggplotify)
 
 options(scipen = 999)
 ```
@@ -73,7 +75,7 @@ usda_monthly <- usda_monthly %>%
   mutate(month = gsub("-", " ", month))
 ```
 
-Finally, I make sure the class of each column is correct. All of the columns were of class `numeric` when read in, so I mutated the `month` column to `yearmon` using the `zoo` package, and everything else to numeric. 
+Last, I make sure the class of each column is correct. All of the columns were of class `numeric` when read in, so I mutated the `month` column to `yearmon` using the `zoo` package, and everything else to numeric. 
 
 ```{r, results='hide'}
 #convert month column to class datetime from class character
@@ -115,15 +117,23 @@ total_lunches_testplot / monthly_free_testplot
 
 # Analysis Plan
 
+My analysis is split into two sections: one for all lunches served for the 2017-2020 SYs and one for all of the lunches served which qualified for whole reimbursement from the USDA NSLP, or free lunches. I thought it might be interesting to see if seasonality and long term trends compare between the whole group and the subgroup. 
+
+For both, I create a tsibble with the months as class `yearmonth` and the total lunches served per month, then create an additive classical decomposition model. 
+
+I then use this model to create an autoplot which helps to visualize the presence of seasolity and long-term trends in the data for both groups. 
+
+Finally, I generate an autocorrelation function with a lag of 12 because I want to see how much participation in one month is correlated with participation for the rest of the school year. 
+
 ## Total Participation in NSLP
 
 ```{r}
 #confusingly, converting the data I want in my time series requires data of class `yearmonth` not `yearmon` I learned I can use `yearmonth()` from the tsibble package to make a tsibble with the correct time class 
 usda_monthly <- usda_monthly %>% 
-  mutate(month_tsib = yearmonth(month))
+  mutate(month = yearmonth(month))
 
 monthly_tsib <- usda_monthly %>%
-  select(c(month_tsib, total_lunches_served)) %>% 
+  select(c(month, total_lunches_served)) %>% 
   as_tsibble()
 ```
 
@@ -150,7 +160,7 @@ total_acf
 
 ```{r}
 free_tsib <- usda_monthly %>% 
-  select(c(month_tsib, total_free_lunches)) %>% 
+  select(c(month, total_free_lunches)) %>% 
   as_tsibble()
 ```
 
@@ -166,10 +176,16 @@ autoplot(free_decomp)
 ```
 
 ```{r}
-acf(free_tsib, lag.max = 12)
+#free_acf <- as.grob(acf(free_tsib, lag.max = 12))
+free_acf <- acf(free_tsib, lag.max = 12)
 ```
 
 # Summarize results visually and in words
+
+```{r}
+#total_acf / free_acf
+```
+
 
 # Next steps and future directions
 
