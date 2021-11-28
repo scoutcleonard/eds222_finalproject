@@ -143,7 +143,6 @@ total_decomp = monthly_tsib %>%
     classical_decomposition(total_lunches_served, type = "additive")
   ) %>% 
   components()
-head(total_decomp)
 
 total_auto <- autoplot(total_decomp)
 ```
@@ -170,20 +169,19 @@ free_decomp = free_tsib %>%
     classical_decomposition(total_free_lunches, type = "additive")
   ) %>% 
   components()
-head(free_decomp)
 
-autoplot(free_decomp)
+free_auto <- autoplot(free_decomp)
 ```
 
 ```{r}
-#free_acf <- as.grob(acf(free_tsib, lag.max = 12))
 free_acf <- acf(free_tsib, lag.max = 12)
 ```
 
 # Summarize results visually and in words
 
 ```{r}
-#total_acf / free_acf
+free_auto
+free_acf
 ```
 
 

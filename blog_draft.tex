@@ -118,6 +118,9 @@
 \FunctionTok{library}\NormalTok{(zoo)}
 \FunctionTok{library}\NormalTok{(feasts)}
 \FunctionTok{library}\NormalTok{(tsibble)}
+\FunctionTok{library}\NormalTok{(patchwork)}
+\FunctionTok{library}\NormalTok{(grid)}
+\FunctionTok{library}\NormalTok{(ggplotify)}
 
 \FunctionTok{options}\NormalTok{(}\AttributeTok{scipen =} \DecValTok{999}\NormalTok{)}
 \end{Highlighting}
@@ -146,8 +149,34 @@ they serve. To qualify for subsidy, meals served by Nutrition Services
 operators must meet federal meal pattern policies which define meal
 content around qualifying food group combinations, sugar content, etc.
 
+\includegraphics{lunch_image.jpg}
+
+**** something about impact of access to nutrition on student behavior
+and performace, with sources cited!
+
 \hypertarget{data-description}{%
 \section{Data Description}\label{data-description}}
+
+The Food and Nutrition Services sector of the USDA offers
+\href{https://www.fns.usda.gov/data-research}{monthly and annual
+reports} of national participation in the National School Lunch Program
+and other school meal programs subsidized by the USDA (breakfast,
+seamless summer, supper, and snacks).
+
+To answer my questions\ldots{}
+
+\textbf{My analysis seeks to explore the questions: Is there seasonality
+in how U.S. school food programs feed students? What about long-term
+trends, and how did any trends change in 2020 during school closures
+from the Covid-19 pandemic? }
+
+\ldots{} I used the National Level Monthly Data for the National School
+Lunch Program, which comes in PDF and Excel formats which are public. I
+downloaded the Excel format of the monthly data and did some tidying in
+Excel to make sure the .csv version would be friendly with R! There were
+some formatting thing like merged cells that included titles, not
+observations, as rows, which I eliminated before downloading as a .csv
+in my R project.
 
 \begin{Shaded}
 \begin{Highlighting}[]
@@ -155,6 +184,12 @@ content around qualifying food group combinations, sugar content, etc.
 \NormalTok{usda\_monthly }\OtherTok{\textless{}{-}} \FunctionTok{read.csv}\NormalTok{(}\FunctionTok{here}\NormalTok{(}\StringTok{"data"}\NormalTok{, }\StringTok{"usda\_monthly\_data\_tidy.csv"}\NormalTok{))}
 \end{Highlighting}
 \end{Shaded}
+
+Even after a little manipulation in excel, there were changes to be made
+for easier manipulation of my monthly lunch data dataframe. Here, I give
+columns more descriptive names, remove odd columns that were added to
+the dataframe when I read in the .csv, mutate columns to exclude ``\%''
+``-'' or spaces that R cannot make sense of.
 
 \begin{Shaded}
 \begin{Highlighting}[]
@@ -176,118 +211,79 @@ content around qualifying food group combinations, sugar content, etc.
 \CommentTok{\#percent\_reduced\_price\_of\_total\_lunches columns}
 \NormalTok{usda\_monthly }\OtherTok{\textless{}{-}}\NormalTok{ usda\_monthly }\SpecialCharTok{\%\textgreater{}\%} 
  \FunctionTok{mutate}\NormalTok{(}\AttributeTok{percent\_free\_of\_total\_lunches =} \FunctionTok{gsub}\NormalTok{(}\StringTok{\textquotesingle{}\%\textquotesingle{}}\NormalTok{,}\StringTok{\textquotesingle{}\textquotesingle{}}\NormalTok{, percent\_free\_of\_total\_lunches)) }\SpecialCharTok{\%\textgreater{}\%} 
-  \FunctionTok{mutate}\NormalTok{(}\AttributeTok{percent\_reduced\_price\_of\_total\_lunches =} \FunctionTok{gsub}\NormalTok{(}\StringTok{\textquotesingle{}\%\textquotesingle{}}\NormalTok{,}\StringTok{\textquotesingle{}\textquotesingle{}}\NormalTok{, percent\_reduced\_price\_of\_total\_lunches)) }\SpecialCharTok{\%\textgreater{}\%} 
+  \FunctionTok{mutate}\NormalTok{(}\AttributeTok{percent\_reduced\_price\_of\_total\_lunches =} \FunctionTok{gsub}\NormalTok{(}\StringTok{\textquotesingle{}\%\textquotesingle{}}\NormalTok{,}\StringTok{\textquotesingle{}\textquotesingle{}}\NormalTok{,percent\_reduced\_price\_of\_total\_lunches)) }\SpecialCharTok{\%\textgreater{}\%}
   \FunctionTok{mutate}\NormalTok{(}\AttributeTok{month =} \FunctionTok{gsub}\NormalTok{(}\StringTok{"{-}"}\NormalTok{, }\StringTok{" "}\NormalTok{, month))}
+\end{Highlighting}
+\end{Shaded}
 
+Last, I make sure the class of each column is correct. All of the
+columns were of class \texttt{numeric} when read in, so I mutated the
+\texttt{month} column to \texttt{yearmon} using the \texttt{zoo}
+package, and everything else to numeric.
+
+\begin{Shaded}
+\begin{Highlighting}[]
 \CommentTok{\#convert month column to class datetime from class character}
 \NormalTok{usda\_monthly }\OtherTok{\textless{}{-}}\NormalTok{ usda\_monthly }\SpecialCharTok{\%\textgreater{}\%} 
   \FunctionTok{mutate}\NormalTok{(}\StringTok{"month"} \OtherTok{=}\NormalTok{ zoo}\SpecialCharTok{::}\FunctionTok{as.yearmon}\NormalTok{(month, }\StringTok{"\%y \%b"}\NormalTok{))}
-\end{Highlighting}
-\end{Shaded}
 
-\begin{Shaded}
-\begin{Highlighting}[]
 \CommentTok{\#check class of all columns}
 \FunctionTok{lapply}\NormalTok{(usda\_monthly, class)}
-\end{Highlighting}
-\end{Shaded}
 
-\begin{verbatim}
-## $month
-## [1] "yearmon"
-## 
-## $total_participation
-## [1] "integer"
-## 
-## $total_lunches_served
-## [1] "integer"
-## 
-## $percent_free_of_total_lunches
-## [1] "character"
-## 
-## $percent_reduced_price_of_total_lunches
-## [1] "character"
-## 
-## $snacks_served
-## [1] "integer"
-## 
-## $cash_payments
-## [1] "integer"
-## 
-## $total_commodity_costs
-## [1] "integer"
-## 
-## $fiscal_year
-## [1] "integer"
-\end{verbatim}
-
-\begin{Shaded}
-\begin{Highlighting}[]
-\CommentTok{\#apply numeric to character columns}
+\CommentTok{\#the data in most of the columns is of class character, but needs to be numeric}
 \NormalTok{usda\_monthly }\OtherTok{\textless{}{-}}\NormalTok{ usda\_monthly }\SpecialCharTok{\%\textgreater{}\%} 
   \FunctionTok{mutate\_if}\NormalTok{(is.character, as.numeric)}
-
-\CommentTok{\#check to see if class conversion worked }
-\FunctionTok{lapply}\NormalTok{(usda\_monthly, class)}
 \end{Highlighting}
 \end{Shaded}
 
-\begin{verbatim}
-## $month
-## [1] "yearmon"
-## 
-## $total_participation
-## [1] "integer"
-## 
-## $total_lunches_served
-## [1] "integer"
-## 
-## $percent_free_of_total_lunches
-## [1] "numeric"
-## 
-## $percent_reduced_price_of_total_lunches
-## [1] "numeric"
-## 
-## $snacks_served
-## [1] "integer"
-## 
-## $cash_payments
-## [1] "integer"
-## 
-## $total_commodity_costs
-## [1] "integer"
-## 
-## $fiscal_year
-## [1] "integer"
-\end{verbatim}
+Finally, to have an initial look at my data, I make simple line graphs
+here:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{\#plots }
-\NormalTok{total\_lunches\_initial }\OtherTok{\textless{}{-}} \FunctionTok{ggplot}\NormalTok{(}\AttributeTok{data =}\NormalTok{ usda\_monthly, }\FunctionTok{aes}\NormalTok{(}\AttributeTok{x =}\NormalTok{ month, }\AttributeTok{y =}\NormalTok{ total\_lunches\_served)) }\SpecialCharTok{+}
-  \FunctionTok{geom\_line}\NormalTok{() }\SpecialCharTok{+}
-  \FunctionTok{theme\_minimal}\NormalTok{()}
+\CommentTok{\#total lunches served plot }
+\NormalTok{total\_lunches\_testplot }\OtherTok{\textless{}{-}} \FunctionTok{ggplot}\NormalTok{(}\AttributeTok{data =}\NormalTok{ usda\_monthly, }\FunctionTok{aes}\NormalTok{(}\AttributeTok{x =}\NormalTok{ month, }\AttributeTok{y =}\NormalTok{ total\_lunches\_served)) }\SpecialCharTok{+}
+  \FunctionTok{geom\_line}\NormalTok{(}\AttributeTok{color =} \StringTok{"darkcyan"}\NormalTok{) }\SpecialCharTok{+}
+  \FunctionTok{theme\_minimal}\NormalTok{() }\SpecialCharTok{+}
+  \FunctionTok{labs}\NormalTok{(}\AttributeTok{title =} \StringTok{"NSLP Lunches Served (Monthly)"}\NormalTok{,}
+       \AttributeTok{x =} \StringTok{"Month"}\NormalTok{,}
+       \AttributeTok{y =} \StringTok{"Total Lunches Served"}\NormalTok{)}
 
-\NormalTok{total\_lunches\_initial}
+\NormalTok{usda\_monthly }\OtherTok{\textless{}{-}}\NormalTok{ usda\_monthly }\SpecialCharTok{\%\textgreater{}\%} 
+  \FunctionTok{mutate}\NormalTok{(}\AttributeTok{total\_free\_lunches =}\NormalTok{ total\_lunches\_served }\SpecialCharTok{*}\NormalTok{ percent\_free\_of\_total\_lunches)}
+
+\NormalTok{monthly\_free\_testplot }\OtherTok{\textless{}{-}} \FunctionTok{ggplot}\NormalTok{(}\AttributeTok{data =}\NormalTok{ usda\_monthly, }\FunctionTok{aes}\NormalTok{(}\AttributeTok{x =}\NormalTok{ month, }\AttributeTok{y =}\NormalTok{ total\_free\_lunches)) }\SpecialCharTok{+}
+  \FunctionTok{geom\_line}\NormalTok{(}\AttributeTok{color =} \StringTok{"darkcyan"}\NormalTok{) }\SpecialCharTok{+}
+  \FunctionTok{theme\_minimal}\NormalTok{() }\SpecialCharTok{+}
+  \FunctionTok{labs}\NormalTok{(}\AttributeTok{title =} \StringTok{"NSLP Free Lunches Served (Monthly)"}\NormalTok{,}
+       \AttributeTok{x =} \StringTok{"Month"}\NormalTok{,}
+       \AttributeTok{y =} \StringTok{"Total Lunches Served"}\NormalTok{)}
+
+\NormalTok{total\_lunches\_testplot }\SpecialCharTok{/}\NormalTok{ monthly\_free\_testplot}
 \end{Highlighting}
 \end{Shaded}
 
 \includegraphics{blog_draft_files/figure-latex/unnamed-chunk-6-1.pdf}
 
-\begin{Shaded}
-\begin{Highlighting}[]
-\NormalTok{percent\_free\_inital }\OtherTok{\textless{}{-}} \FunctionTok{ggplot}\NormalTok{(}\AttributeTok{data =}\NormalTok{ usda\_monthly, }\FunctionTok{aes}\NormalTok{(}\AttributeTok{x =}\NormalTok{ month, }\AttributeTok{y =}\NormalTok{ percent\_free\_of\_total\_lunches)) }\SpecialCharTok{+}
-  \FunctionTok{geom\_line}\NormalTok{() }\SpecialCharTok{+}
-  \FunctionTok{theme\_minimal}\NormalTok{()}
-
-\NormalTok{percent\_free\_inital}
-\end{Highlighting}
-\end{Shaded}
-
-\includegraphics{blog_draft_files/figure-latex/unnamed-chunk-7-1.pdf}
-
 \hypertarget{analysis-plan}{%
 \section{Analysis Plan}\label{analysis-plan}}
+
+My analysis is split into two sections: one for all lunches served for
+the 2017-2020 SYs and one for all of the lunches served which qualified
+for whole reimbursement from the USDA NSLP, or free lunches. I thought
+it might be interesting to see if seasonality and long term trends
+compare between the whole group and the subgroup.
+
+For both, I create a tsibble with the months as class \texttt{yearmonth}
+and the total lunches served per month, then create an additive
+classical decomposition model.
+
+I then use this model to create an autoplot which helps to visualize the
+presence of seasolity and long-term trends in the data for both groups.
+
+Finally, I generate an autocorrelation function with a lag of 12 because
+I want to see how much participation in one month is correlated with
+participation for the rest of the school year.
 
 \hypertarget{total-participation-in-nslp}{%
 \subsection{Total Participation in
@@ -295,12 +291,12 @@ NSLP}\label{total-participation-in-nslp}}
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{\#confusingly, converting the data I want in my time series requires data of class \textasciigrave{}yearmonth\textasciigrave{} not \textasciigrave{}yearnon\textasciigrave{} I learned I can use \textasciigrave{}yearmonth()\textasciigrave{} from the tsibble package to make a happy tsibble}
+\CommentTok{\#confusingly, converting the data I want in my time series requires data of class \textasciigrave{}yearmonth\textasciigrave{} not \textasciigrave{}yearmon\textasciigrave{} I learned I can use \textasciigrave{}yearmonth()\textasciigrave{} from the tsibble package to make a tsibble with the correct time class }
 \NormalTok{usda\_monthly }\OtherTok{\textless{}{-}}\NormalTok{ usda\_monthly }\SpecialCharTok{\%\textgreater{}\%} 
-  \FunctionTok{mutate}\NormalTok{(}\AttributeTok{month\_tsib =} \FunctionTok{yearmonth}\NormalTok{(month))}
+  \FunctionTok{mutate}\NormalTok{(}\AttributeTok{month =} \FunctionTok{yearmonth}\NormalTok{(month))}
 
 \NormalTok{monthly\_tsib }\OtherTok{\textless{}{-}}\NormalTok{ usda\_monthly }\SpecialCharTok{\%\textgreater{}\%}
-  \FunctionTok{select}\NormalTok{(}\FunctionTok{c}\NormalTok{(month\_tsib, total\_lunches\_served)) }\SpecialCharTok{\%\textgreater{}\%} 
+  \FunctionTok{select}\NormalTok{(}\FunctionTok{c}\NormalTok{(month, total\_lunches\_served)) }\SpecialCharTok{\%\textgreater{}\%} 
   \FunctionTok{as\_tsibble}\NormalTok{()}
 \end{Highlighting}
 \end{Shaded}
@@ -320,19 +316,25 @@ NSLP}\label{total-participation-in-nslp}}
 ## # A dable: 6 x 7 [1M]
 ## # Key:     .model [1]
 ## # :        total_lunches_served = trend + seasonal + random
-##   .model         month_tsib total_lunches_s~ trend seasonal random season_adjust
+##   .model              month total_lunches_s~ trend seasonal random season_adjust
 ##   <chr>               <mth>            <int> <dbl>    <dbl>  <dbl>         <dbl>
-## 1 "classical_de~   2017 Oct        570181798    NA   1.52e8     NA    417772650.
-## 2 "classical_de~   2017 Nov        494401221    NA   7.18e7     NA    422581769.
-## 3 "classical_de~   2017 Dec        391520580    NA   2.35e7     NA    368067478.
-## 4 "classical_de~   2018 Jan        472917391    NA   9.78e7     NA    375143033.
-## 5 "classical_de~   2018 Feb        496059395    NA   9.53e7     NA    400760745.
-## 6 "classical_de~   2018 Mar        491726562    NA   4.98e7     NA    441887118.
+## 1 "classical_deco~ 2017 Oct        570181798    NA   1.52e8     NA    417772650.
+## 2 "classical_deco~ 2017 Nov        494401221    NA   7.18e7     NA    422581769.
+## 3 "classical_deco~ 2017 Dec        391520580    NA   2.35e7     NA    368067478.
+## 4 "classical_deco~ 2018 Jan        472917391    NA   9.78e7     NA    375143033.
+## 5 "classical_deco~ 2018 Feb        496059395    NA   9.53e7     NA    400760745.
+## 6 "classical_deco~ 2018 Mar        491726562    NA   4.98e7     NA    441887118.
 \end{verbatim}
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\FunctionTok{autoplot}\NormalTok{(total\_decomp)}
+\NormalTok{total\_auto }\OtherTok{\textless{}{-}} \FunctionTok{autoplot}\NormalTok{(total\_decomp)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{total\_acf }\OtherTok{\textless{}{-}} \FunctionTok{acf}\NormalTok{(monthly\_tsib, }\AttributeTok{lag.max =} \DecValTok{12}\NormalTok{)}
 \end{Highlighting}
 \end{Shaded}
 
@@ -340,11 +342,27 @@ NSLP}\label{total-participation-in-nslp}}
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\FunctionTok{acf}\NormalTok{(monthly\_tsib, }\AttributeTok{lag.max =} \DecValTok{12}\NormalTok{)}
+\NormalTok{total\_auto }
 \end{Highlighting}
 \end{Shaded}
 
-\includegraphics{blog_draft_files/figure-latex/unnamed-chunk-10-1.pdf}
+\includegraphics{blog_draft_files/figure-latex/unnamed-chunk-9-2.pdf}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{total\_acf}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## 
+## Autocorrelations of series 'monthly_tsib', by lag
+## 
+## 0.0000 0.0833 0.1667 0.2500 0.3333 0.4167 0.5000 0.5833 0.6667 0.7500 0.8333 
+##  1.000  0.735  0.355  0.202  0.230  0.240  0.200  0.133  0.079  0.094  0.194 
+## 0.9167 1.0000 
+##  0.351  0.419
+\end{verbatim}
 
 \hypertarget{participation-of-free-lunch-eligible-students}{%
 \subsection{Participation of Free-Lunch Eligible
@@ -353,7 +371,7 @@ Students}\label{participation-of-free-lunch-eligible-students}}
 \begin{Shaded}
 \begin{Highlighting}[]
 \NormalTok{free\_tsib }\OtherTok{\textless{}{-}}\NormalTok{ usda\_monthly }\SpecialCharTok{\%\textgreater{}\%} 
-  \FunctionTok{select}\NormalTok{(}\FunctionTok{c}\NormalTok{(month\_tsib, percent\_free\_of\_total\_lunches)) }\SpecialCharTok{\%\textgreater{}\%} 
+  \FunctionTok{select}\NormalTok{(}\FunctionTok{c}\NormalTok{(month, total\_free\_lunches)) }\SpecialCharTok{\%\textgreater{}\%} 
   \FunctionTok{as\_tsibble}\NormalTok{()}
 \end{Highlighting}
 \end{Shaded}
@@ -362,46 +380,34 @@ Students}\label{participation-of-free-lunch-eligible-students}}
 \begin{Highlighting}[]
 \NormalTok{free\_decomp }\OtherTok{=}\NormalTok{ free\_tsib }\SpecialCharTok{\%\textgreater{}\%} 
   \FunctionTok{model}\NormalTok{(}
-    \FunctionTok{classical\_decomposition}\NormalTok{(percent\_free\_of\_total\_lunches, }\AttributeTok{type =} \StringTok{"additive"}\NormalTok{)}
+    \FunctionTok{classical\_decomposition}\NormalTok{(total\_free\_lunches, }\AttributeTok{type =} \StringTok{"additive"}\NormalTok{)}
 \NormalTok{  ) }\SpecialCharTok{\%\textgreater{}\%} 
   \FunctionTok{components}\NormalTok{()}
-\FunctionTok{head}\NormalTok{(free\_decomp)}
+
+\FunctionTok{autoplot}\NormalTok{(free\_decomp)}
 \end{Highlighting}
 \end{Shaded}
 
-\begin{verbatim}
-## # A dable: 6 x 7 [1M]
-## # Key:     .model [1]
-## # :        percent_free_of_total_lunches = trend + seasonal + random
-##   .model        month_tsib percent_free_of_~ trend seasonal random season_adjust
-##   <chr>              <mth>             <dbl> <dbl>    <dbl>  <dbl>         <dbl>
-## 1 "classical_d~   2017 Oct              68.8    NA    -2.67     NA          71.5
-## 2 "classical_d~   2017 Nov              67.2    NA    -3.37     NA          70.6
-## 3 "classical_d~   2017 Dec              67.2    NA    -3.89     NA          71.1
-## 4 "classical_d~   2018 Jan              67.3    NA    -4.21     NA          71.5
-## 5 "classical_d~   2018 Feb              68.1    NA    -4.22     NA          72.3
-## 6 "classical_d~   2018 Mar              68.1    NA    -5.62     NA          73.7
-\end{verbatim}
+\includegraphics{blog_draft_files/figure-latex/unnamed-chunk-11-1.pdf}
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\FunctionTok{autoplot}\NormalTok{(free\_decomp)}
+\CommentTok{\#free\_acf \textless{}{-} as.grob(acf(free\_tsib, lag.max = 12))}
+\NormalTok{free\_acf }\OtherTok{\textless{}{-}} \FunctionTok{acf}\NormalTok{(free\_tsib, }\AttributeTok{lag.max =} \DecValTok{12}\NormalTok{)}
 \end{Highlighting}
 \end{Shaded}
 
 \includegraphics{blog_draft_files/figure-latex/unnamed-chunk-12-1.pdf}
 
-\begin{Shaded}
-\begin{Highlighting}[]
-\FunctionTok{acf}\NormalTok{(free\_tsib, }\AttributeTok{lag.max =} \DecValTok{12}\NormalTok{)}
-\end{Highlighting}
-\end{Shaded}
-
-\includegraphics{blog_draft_files/figure-latex/unnamed-chunk-13-1.pdf}
-
 \hypertarget{summarize-results-visually-and-in-words}{%
 \section{Summarize results visually and in
 words}\label{summarize-results-visually-and-in-words}}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{\#total\_acf / free\_acf}
+\end{Highlighting}
+\end{Shaded}
 
 \hypertarget{next-steps-and-future-directions}{%
 \section{Next steps and future
