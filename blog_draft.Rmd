@@ -102,7 +102,7 @@ total_lunches_testplot <- ggplot(data = usda_monthly, aes(x = month, y = total_l
        y = "Total Lunches Served")
 
 usda_monthly <- usda_monthly %>% 
-  mutate(total_free_lunches = total_lunches_served * percent_free_of_total_lunches)
+  mutate(total_free_lunches = (total_lunches_served * percent_free_of_total_lunches) / 100)
 
 monthly_free_testplot <- ggplot(data = usda_monthly, aes(x = month, y = total_free_lunches)) +
   geom_line(color = "darkcyan") +
@@ -180,8 +180,7 @@ free_acf <- acf(free_tsib, lag.max = 12)
 # Summarize results visually and in words
 
 ```{r}
-free_auto
-free_acf
+
 ```
 
 
