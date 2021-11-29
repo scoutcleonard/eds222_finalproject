@@ -2,11 +2,13 @@
 title: "USDA National School Lunch Program Time Series Analysis"
 author: "Scout Leonard"
 date: "11/16/2021"
-output: html_document
+output:
+  pdf_document:
+    toc: yes
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE)
+knitr::opts_chunk$set(echo = FALSE, warning = FALSE, message = FALSE)
 ```
 
 ```{r}
@@ -17,6 +19,8 @@ library(zoo)
 library(feasts)
 library(tsibble)
 library(patchwork)
+library(grid)
+library(ggplotify)
 
 options(scipen = 999)
 ```
@@ -31,9 +35,7 @@ The National School Lunch Program (NSLP) is an enormous food system with major i
 
 To provide meals at free and reduced cost to students, participating school districts are reimbursed cash subsidies for every qualifying meal they serve. To qualify for subsidy, meals served by Nutrition Services operators must meet federal meal pattern policies which define meal content around qualifying food group combinations, sugar content, etc. 
 
-![](lunch_image.jpg)
-
-**** something about impact of access to nutrition on student behavior and performace, with sources cited! 
+**** something about impact of access to nutrition on student behavior and performance, with sources cited! 
 
 # Data Description
 
@@ -169,13 +171,10 @@ free_decomp = free_tsib %>%
   components()
 
 free_auto <- autoplot(free_decomp)
-free_acf <- acf(free_tsib, lag.max = 12)
-
 ```
 
 ```{r}
-free_auto
-free_acf
+free_acf <- acf(free_tsib, lag.max = 12)
 ```
 
 # Summarize results visually and in words
