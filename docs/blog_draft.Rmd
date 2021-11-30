@@ -199,8 +199,8 @@ free_decomp = free_tsib %>%
   ) %>% 
   components()
 
-# svg(here('docs', 'free_auto.svg'))
- free_auto <- autoplot(free_decomp)
+# png(here('docs', 'free_auto.png'))
+free_auto <- autoplot(free_decomp)
 # while (!is.null(dev.list()))  dev.off()
 
 
@@ -211,6 +211,7 @@ free_acf <- acf(free_tsib, lag.max = 12)
 free_auto
 free_acf
 ```
+
 
 # Summarize results visually and in words
 
