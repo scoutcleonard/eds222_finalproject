@@ -24,6 +24,7 @@ library(zoo)
 library(feasts)
 library(tsibble)
 library(patchwork)
+library(ggplot2)
 
 options(scipen = 999)
 ```
@@ -108,6 +109,11 @@ total_lunches_testplot <- ggplot(data = usda_monthly, aes(x = month, y = total_l
        x = "Month",
        y = "Total Lunches Served")
 
+ggsave(here("docs", "total_testplot.png"), 
+       plot = last_plot(),
+       dpi = 300,
+       width = 15)
+
 usda_monthly <- usda_monthly %>% 
   mutate(total_free_lunches = (total_lunches_served * percent_free_of_total_lunches) / 100)
 
@@ -118,13 +124,22 @@ monthly_free_testplot <- ggplot(data = usda_monthly, aes(x = month, y = total_fr
        x = "Month",
        y = "Total Lunches Served")
 
-total_lunches_testplot / monthly_free_testplot
-
+ggsave(here("docs", "free_testplot.png"),
+       plot = last_plot(),
+       dpi = 300,
+       width = 15)
 ```
+
+![](total_testplot.png) 
+![](free_testplot.png)
 
 At a first glance, I can see that there are seasonal dips in NSLP lunch participation in the summers, as expected. There also appears to be a dip in participation before January, which I would suspect is due to holiday recesses. It seems that the start of the school year does have higher participation than any of the winter and spring months, though. 
 
 I can see that participation dropped dramatically when schools closed, by about 2/3 for all students, and by 1/2 for just the students who qualify for free lunch. 
+
+## Data Quality
+
+Every school day, school cafeteria staff at participating NSLP schools report meals claimed by students who qualify for free- and reduced-priced lunches. Having supported cafeteria programs in previous work, this makes me wonder about biases in reporting. Something I find interesting about school nutrition programs is that their budgets operate independently from a school district's budget and general fund (3). In school districts with higher budgets, there may be some support from the district, but in many cases, nutrition programs rely on federal reimbursements to pay for staffing, food, and supplies and equipment. This differential funding may lead to shorter staffing and more shortcuts in properly counting reimbursable meals on students' trays: a challenge my colleagues and I witnessed in short-staffed districts nationally, which are often the sites with high proportions of students who depend the NSLP. I am sure there are other factors that may make the data biased in ways I cannot imagine, but this is one that that I imagine would impact the accuracy of reported student participation, possibly suppressing seasonal trends. 
 
 # Analysis Plan
 
@@ -169,7 +184,7 @@ total_auto
 ```
 
 
-## Participation of Free-Lunch Eligible Students 
+## Free-Eligible Participation in NSLP
 
 ```{r}
 free_tsib <- usda_monthly %>% 
@@ -184,9 +199,12 @@ free_decomp = free_tsib %>%
   ) %>% 
   components()
 
-free_auto <- autoplot(free_decomp)
-free_acf <- acf(free_tsib, lag.max = 12)
+# svg(here('docs', 'free_auto.svg'))
+ free_auto <- autoplot(free_decomp)
+# while (!is.null(dev.list()))  dev.off()
 
+
+free_acf <- acf(free_tsib, lag.max = 12)
 ```
 
 ```{r}
@@ -207,3 +225,4 @@ free_acf
 
 (1) https://www.ers.usda.gov/topics/food-nutrition-assistance/child-nutrition-programs/national-school-lunch-program/ 
 (2) https://fns-prod.azureedge.net/sites/default/files/resource-files/NSLPFactSheet.pdf
+(3) http://bestpractices.nokidhungry.org/sites/default/files/2020-06/Need%20for%20School%20Nutrition%20Budget%20Relief.pdf
