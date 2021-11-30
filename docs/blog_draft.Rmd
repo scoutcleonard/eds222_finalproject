@@ -174,11 +174,11 @@ total_auto <- autoplot(total_decomp) %>%
   labs(title = "Classical Decomposition for USDA NSLP Lunch Participation")
 ```
 
-```{r}
+```{r fig.width= 6, fig.height=3}
 total_acf <- acf(monthly_tsib, lag.max = 12)
 ```
 
-```{r}
+```{r fig.width= 6, fig.height=3}
 total_acf
 total_auto
 ```
@@ -192,7 +192,7 @@ free_tsib <- usda_monthly %>%
   as_tsibble()
 ```
 
-```{r}
+```{r fig.width= 6, fig.height=3}
 free_decomp = free_tsib %>% 
   model(
     classical_decomposition(total_free_lunches, type = "additive")
@@ -207,7 +207,7 @@ free_auto <- autoplot(free_decomp)
 free_acf <- acf(free_tsib, lag.max = 12)
 ```
 
-```{r}
+```{r fig.width= 6, fig.height=3}
 free_auto
 free_acf
 ```
