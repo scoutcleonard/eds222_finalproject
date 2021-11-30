@@ -174,16 +174,6 @@ total_auto <- autoplot(total_decomp) %>%
   labs(title = "Classical Decomposition for USDA NSLP Lunch Participation")
 ```
 
-```{r fig.width= 6, fig.height=3}
-total_acf <- acf(monthly_tsib, lag.max = 12)
-```
-
-```{r fig.width= 6, fig.height=3}
-total_acf
-total_auto
-```
-
-
 ## Free-Eligible Participation in NSLP
 
 ```{r}
@@ -192,31 +182,31 @@ free_tsib <- usda_monthly %>%
   as_tsibble()
 ```
 
-```{r fig.width= 6, fig.height=3}
+```{r results='hide'}
 free_decomp = free_tsib %>% 
   model(
     classical_decomposition(total_free_lunches, type = "additive")
   ) %>% 
   components()
 
-# png(here('docs', 'free_auto.png'))
 free_auto <- autoplot(free_decomp)
-# while (!is.null(dev.list()))  dev.off()
-
-
-free_acf <- acf(free_tsib, lag.max = 12)
-```
-
-```{r fig.width= 6, fig.height=3}
-free_auto
-free_acf
 ```
 
 
 # Summarize results visually and in words
 
-```{r}
+Ultimately, my results showed that there is only a statistically significant correlation between student participation in month 1 and students participation in months 2, 3, 11, and 12. 
 
+## Results for All Students
+```{r fig.width= 6, fig.height=3}
+total_acf <- acf(monthly_tsib, lag.max = 12)
+total_auto
+```
+
+## Results for Free-Eligible Students
+```{r fig.width= 6, fig.height=3}
+free_acf <- acf(free_tsib, lag.max = 12)
+free_auto
 ```
 
 
