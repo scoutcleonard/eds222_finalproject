@@ -25,15 +25,18 @@ library(feasts)
 library(tsibble)
 library(patchwork)
 library(ggplot2)
+library(broom)
 
 options(scipen = 999)
 ```
 
 # My Question:
 
-My analysis seeks to explore the questions: Is there seasonality in how U.S. school food programs feed students? What about long-term trends, and how did any trends change in 2020 during school closures from the Covid-19 pandemic? 
+My analysis seeks to explore the questions: _Are there seasonal differences in how U.S. school food programs feed students? What about long-term trends, and how did any trends change in 2020 during school closures from the Covid-19 pandemic?_
 
-I have previous experience working in school food systems to expand access to this resource for school communities, but you need no time in cafeterias to guess that there would be seasonality in feeding kids. Students off for summer means fewer students participating in the NSLP in July and August. I was more interested in understanding seasonal differences within the school year: for example, _does the US feed more students in fall compared to winter?_
+I have previous experience working in school food systems to expand access to this resource for school communities, but you need no time in cafeterias to guess that there would be seasonality in feeding kids. Students off for summer means fewer students participating in the school lunch in July and August. I was more interested in understanding seasonal differences within the school year: for example, _does the US feed more students in fall compared to winter?_
+
+I am also interested in the impact of Covid-19 on school lunch. Across the U.S., many school nutrition programs adjusted to serving grab-and-go meals for students who rely on school for part of their daily nutrition during school closures. Understanding service gaps during this time 
 
 ## Background
 
@@ -41,19 +44,13 @@ The National School Lunch Program (NSLP) is an enormous food system with major i
 
 To provide meals at free and reduced cost to students, participating school districts are reimbursed cash subsidies for every qualifying meal they serve. To qualify for subsidy, meals served by Nutrition Services operators must meet federal meal pattern policies which define meal content around qualifying food group combinations, sugar content, etc. 
 
-![](lunch_image.jpg)
-
-**** something about impact of access to nutrition on student behavior and performace, with sources cited! 
+Students from homes that experience food insecurity and hunger are reported to experience higher risk of decreased academic performance, more tardy and absent days, and more mental health challenges (4). American K-12 education and opportunities afforded to children are affected by poverty and income inequality (5). A robust understanding of school food systems can create data-informed decisions around USDA and state school food policy and on-the-ground management so that students do not have hunger as an additional barrier to their wellbeing adn academic achievement. 
 
 # Data Description
 
 The Food and Nutrition Services sector of the USDA offers [monthly and annual reports](https://www.fns.usda.gov/data-research) of national participation in the National School Lunch Program and other school meal programs subsidized by the USDA (breakfast, seamless summer, supper, and snacks). 
 
-To answer my questions...
-
-**My analysis seeks to explore the questions: Is there seasonality in how U.S. school food programs feed students? What about long-term trends, and how did any trends change in 2020 during school closures from the Covid-19 pandemic? **
-
-... I used the [National Level Monthly Data for the National School Lunch Program](https://www.fns.usda.gov/pd/child-nutrition-tables), which comes in publicly available .pdf and .xlsx formats. I downloaded the .xlsx format of the monthly data and did some tidying in Excel to make sure the .csv version would be friendly with R; there were some formatting issues, like merged cells that included titles, not observations, as rows, which I eliminated before downloading as a .csv in my R project.
+To answer my questions, I used the [National Level Monthly Data for the National School Lunch Program](https://www.fns.usda.gov/pd/child-nutrition-tables), which gives national-level monthly participation in USDA school nutrition programs since October 2017 (47 months). This data comes in publicly available .pdf and .xlsx formats. I downloaded the .xlsx format of the monthly data and did some tidying in Excel to make sure the .csv version would be friendly with R. This version of the data can be found in my [Github repository](https://github.com/scoutcleonard/eds222_finalproject).
 
 ```{r}
 #read in the monthly lunch data 
@@ -142,19 +139,19 @@ I can see that participation dropped dramatically when schools closed, by about 
 
 ## Data Quality
 
-Every school day, school cafeteria staff at participating NSLP schools report meals claimed by students who qualify for free- and reduced-priced lunches. Having supported cafeteria programs in previous work, this makes me wonder about biases in reporting. Something I find interesting about school nutrition programs is that their budgets operate independently from a school district's budget and general fund (3). In school districts with higher budgets, there may be some support from the district, but in many cases, nutrition programs rely on federal reimbursements to pay for staffing, food, and supplies and equipment. This differential funding may lead to shorter staffing and more shortcuts in properly counting reimbursable meals on students' trays: a challenge my colleagues and I witnessed in short-staffed districts nationally, which are often the sites with high proportions of students who depend the NSLP. I am sure there are other factors that may make the data biased in ways I cannot imagine, but this is one that that I imagine would impact the accuracy of reported student participation, possibly suppressing seasonal trends. 
+Every school day, school cafeteria staff at participating NSLP schools report meals claimed by students who qualify for free- and reduced-priced lunches. That meets the numbers from this dataset are self-reported by schools and districts nationally. The USDA conducts periodically audits schools to control for accurate serving, counting, and claiming or reimbursable meals. 
+
+This analysis assumes that the numbers presented by the USDA are accurate monthly meals served nationally, but there is risk for systematically biased sampling. In my own work, I have observed inaccurate claim reports as a results of short staffing and reduced bandwidth for serving _and_ counting. This may mean that school nutrition programs with lower budgets (i.e. more free-and-reduced eligible students, because of funding models) are at risk for less accurate reporting.
 
 # Analysis Plan
 
-My analysis is split into two sections: one for all lunches served for the 2017-2020 SYs and one for all of the lunches served which qualified for whole reimbursement from the USDA NSLP, or free lunches. I thought it might be interesting to see if seasonality and long term trends compare between the whole group and the subgroup. 
+## Seasonality in NSLP
 
-For both, I create a tsibble with the months as class `yearmonth` and the total lunches served per month, then create an additive classical decomposition model. 
+For the first part of my analysis, I investigate seasonal differences in NSLP participation by decomposing the data seasonal and trend components using the `classical_decomposition()` function and applying `autoplot()` to that: 
 
-I then use this model to create an autoplot which helps to visualize the presence of seasonality and long-term trends in the data for both groups. 
+I first create a tsibble with the months as class `yearmonth` and the total lunches served per month, then create an additive classical decomposition model. I then use this model to generate an autoplot which helps to visualize the presence of seasonality and long-term trends in the data for both groups. 
 
 Finally, I generate an autocorrelation function with a lag of 12 because I want to see how much participation in one month is correlated with participation for the rest of the school year. 
-
-## Total Participation in NSLP
 
 ```{r return = FALSE}
 #confusingly, converting the data I want in my time series requires data of class `yearmonth` not `yearmon` I learned I can use `yearmonth()` from the tsibble package to make a tsibble with the correct time class 
@@ -177,53 +174,9 @@ total_auto <- autoplot(total_decomp) %>%
   labs(title = "Classical Decomposition for USDA NSLP Lunch Participation")
 ```
 
-## Free-Eligible Participation in NSLP
+## Impact of Covid on NSLP
 
-```{r}
-free_tsib <- usda_monthly %>% 
-  select(c(month, total_free_lunches)) %>% 
-  as_tsibble()
-```
-
-```{r results='hide'}
-free_decomp = free_tsib %>% 
-  model(
-    classical_decomposition(total_free_lunches, type = "additive")
-  ) %>% 
-  components()
-
-free_auto <- autoplot(free_decomp)
-```
-
-
-# Summarize results visually and in words
-
-Ultimately, my results showed that there is only a statistically significant correlation between student participation in month 1 and students participation in months 2, 3, 11, and 12. I interpret this as demonstrating that the NSLP is feeding children differently across the school year, and that participation during the first month of the year can only tell us something about participation for 1/4 of the year. 
-
-## Results for All Students
-
-```{r fig.width= 6, fig.height=3}
-total_acf <- acf(monthly_tsib, lag.max = 12)
-```
-
-The results of my decomposition function autoplot demonstrate a stronger seasonal effect in NSLP participation among all participating students. We can see declines in participation during the summer months, as we would expect but also changes in participation during the school year. I predict that because the data is reported as a monthly total, that there are seasonal decreases in participation during months with school breaks (in winter and spring), and so I am not sure that there is evidence enough to say that the NSLP participating schools and districts feed students differently seasonally. 
-
-```{r}
-total_auto
-```
-
-
-## Results for Free-Eligible Students
-
-```{r fig.width= 6, fig.height=3}
-free_acf <- acf(free_tsib, lag.max = 12)
-```
-
-```{r}
-free_auto
-```
-
-## How many students were impacted by loss of school meals do to Covid? 
+In addition to considering the trend component of the classical decomposition from March 2020 onward, I also complete a hypothesis test to compare the mean monthly participation in the NSLP before and during the Covid-19 pandemic.
 
 ```{r}
 covid_df <- usda_monthly %>% 
@@ -236,9 +189,42 @@ mean_fed_precovid <- mean(pre_covid_df$total_lunches_served)
 mean_fed_covid <- mean(covid_df$total_lunches_served)
 ```
 
-My null hypothesis is that there is no difference in the mean number of students fed by the USDA NSLP before and during the Covid-19 pandemic.
+Mean monthly participation in the NSLP prior to Covid-19 was `r mean_fed_precovid` and mean monthly participation in the NSLP during the Covid-19 pandemic is `r mean_fed_covid`. 
 
-My alternate hypothesis is there is a nonzero difference between the mean number of students fed by the USDA NSLP before and during the Covid-19 pandemic. 
+My null hypothesis is that there is no significant difference between the pre- and during- Covid-19 lunches served, and my alternative hypothesis is that there is a significant different between the conditions. I test the null hypothesis using a Welch's two-sample t test. 
+
+# Summarize results visually and in words
+
+Ultimately, my results showed that there is only a statistically significant correlation between student participation in month 1 and students participation in months 2, 3, 11, and 12. I interpret this as demonstrating that the NSLP is feeding children differently across the school year, and that participation during the first month of the year can only tell us something about participation for 1/4 of the year. 
+
+## Seasonality of NSLP
+
+```{r fig.width= 6, fig.height=3}
+total_acf <- acf(monthly_tsib, lag.max = 12)
+```
+
+The results of my decomposition function autoplot demonstrate a stronger seasonal effect in NSLP participation among all participating students. We can see declines in participation during the summer months, as we would expect but also changes in participation during the school year. I predict that because the data is reported as a monthly total, that there are seasonal decreases in participation during months with school breaks (in winter and spring), and so I am not sure that there is evidence enough to say that the NSLP participating schools and districts feed students differently seasonally. 
+
+```{r fig.width= 6, fig.height=3}
+total_auto
+```
+
+Any seasonal differences between school months were drowned out by the seasonal differences between school months and summer months. To further investigate the seasonal differences in meals served, I tried to also run hypothesis tests comparing total meals served for fall and spring months, fall and winter months, and spring and winter months. 
+
+```{r}
+#t test: fall versus rest of school year
+tidy(t.test(usda_monthly$total_lunches_served[usda_monthly$season == "fall"], usda_monthly$total_lunches_served[usda_monthly$season != "fall" | usda_monthly$season != "summer"]))
+```
+
+```{r}
+tidy(t.test(usda_monthly$total_lunches_served[usda_monthly$season == "winter"], usda_monthly$total_lunches_served[usda_monthly$season != "winter" | usda_monthly$season != "summer"]))
+```
+
+```{r}
+tidy(t.test(usda_monthly$total_lunches_served[usda_monthly$season == "spring"], usda_monthly$total_lunches_served[usda_monthly$season != "spring" | usda_monthly$season != "summer"]))
+```
+
+## Impact of Covid on NSLP
 
 ```{r}
 t.test(total_lunches_served ~ covid_status, data = usda_monthly)
@@ -248,8 +234,11 @@ t.test(total_lunches_served ~ covid_status, data = usda_monthly)
 
 # Next steps and future directions
 
+The USDA's data platform only allows me to access NSLP participation data from 2017 onward. As a next step, I might reach out to their data services to try to obtain data from previous years. 47 months of data are not enough to satisfy the Central Limit Theorem.
+
 # References
 
 (1) https://www.ers.usda.gov/topics/food-nutrition-assistance/child-nutrition-programs/national-school-lunch-program/ 
 (2) https://fns-prod.azureedge.net/sites/default/files/resource-files/NSLPFactSheet.pdf
 (3) http://bestpractices.nokidhungry.org/sites/default/files/2020-06/Need%20for%20School%20Nutrition%20Budget%20Relief.pdf
+(4) https://www.karger.com/Article/Pdf/66399
