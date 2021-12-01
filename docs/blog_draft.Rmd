@@ -26,6 +26,8 @@ library(tsibble)
 library(patchwork)
 library(ggplot2)
 library(broom)
+library(xtable)
+library(kableExtra)
 
 options(scipen = 999)
 ```
@@ -227,7 +229,7 @@ tidy(t.test(usda_monthly$total_lunches_served[usda_monthly$season == "spring"], 
 ## Impact of Covid on NSLP
 
 ```{r}
-t.test(total_lunches_served ~ covid_status, data = usda_monthly)
+t.test(total_lunches_served ~ covid_status, data = usda_monthly) 
 ```
 
 
