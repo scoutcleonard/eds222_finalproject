@@ -88,14 +88,20 @@ Last, I make sure the class of each column is correct. All of the columns were o
 ```{r, results='hide'}
 #convert month column to class datetime from class character
 usda_monthly <- usda_monthly %>% 
-  mutate("month" = zoo::as.yearmon(month, "%y %b"))
+  mutate("month" = zoo::as.yearmon(month, "%y %b")) %>% 
+  mutate("covid_status" = ifelse(month > "Feb 2020", "covid", "pre-covid"))
 
-#check class of all columns
-lapply(usda_monthly, class)
-
-#the data in most of the columns is of class character, but needs to be numeric
 usda_monthly <- usda_monthly %>% 
-  mutate_if(is.character, as.numeric)
+  mutate(percent_free_of_total_lunches = as.numeric(percent_free_of_total_lunches)) 
+
+
+#add season component
+usda_monthly <- usda_monthly %>% 
+  mutate(month_2 = format(month, "%b")) %>% 
+  mutate(season = ifelse(month_2 == "Dec" | month_2 == "Jan" | month_2 == "Feb", "winter",
+                         ifelse(month_2 == "Mar" | month_2 == "Apr" | month_2 == "May", "spring",
+                                ifelse(month_2 == "Jun" | month_2 == "Jul" | month_2 == "Aug", "summer",
+                                       ifelse(month_2 == "Sep" | month_2 == "Oct" | month_2 == "Nov", "fall", NA)))))
 ```
 
 Finally, to have an initial look at my data, I make simple line graphs here: 
@@ -129,9 +135,6 @@ ggsave(here("docs", "free_testplot.png"),
        dpi = 300,
        width = 15)
 ```
-
-![](total_testplot.png) 
-![](free_testplot.png)
 
 At a first glance, I can see that there are seasonal dips in NSLP lunch participation in the summers, as expected. There also appears to be a dip in participation before January, which I would suspect is due to holiday recesses. It seems that the start of the school year does have higher participation than any of the winter and spring months, though. 
 
@@ -219,6 +222,9 @@ free_acf <- acf(free_tsib, lag.max = 12)
 ```{r}
 free_auto
 ```
+
+## How many students were impacted by loss of school meals do to Covid? 
+
 
 
 
