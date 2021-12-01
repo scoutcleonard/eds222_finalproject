@@ -225,6 +225,24 @@ free_auto
 
 ## How many students were impacted by loss of school meals do to Covid? 
 
+```{r}
+covid_df <- usda_monthly %>% 
+  filter(covid_status == "covid")
+
+pre_covid_df <- usda_monthly %>% 
+  filter(covid_status == "pre-covid")
+
+mean_fed_precovid <- mean(pre_covid_df$total_lunches_served)
+mean_fed_covid <- mean(covid_df$total_lunches_served)
+```
+
+My null hypothesis is that there is no difference in the mean number of students fed by the USDA NSLP before and during the Covid-19 pandemic.
+
+My alternate hypothesis is there is a nonzero difference between the mean number of students fed by the USDA NSLP before and during the Covid-19 pandemic. 
+
+```{r}
+t.test(total_lunches_served ~ covid_status, data = usda_monthly)
+```
 
 
 
