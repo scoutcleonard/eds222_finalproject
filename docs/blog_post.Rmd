@@ -46,7 +46,7 @@ The National School Lunch Program (NSLP) is an enormous food system with major i
 
 To provide meals at free and reduced cost to students, participating school districts are reimbursed cash subsidies for every qualifying meal they serve. To qualify for subsidy, meals served by Nutrition Services operators must meet federal meal pattern policies which define meal content around qualifying food group combinations, sugar content, etc. 
 
-Students from homes that experience food insecurity and hunger are reported to experience higher risk of decreased academic performance, more tardy and absent days, and more mental health challenges (4). American K-12 education and opportunities afforded to children are affected by poverty and income inequality (5). A robust understanding of school food systems can create data-informed decisions around USDA and state school food policy and on-the-ground management so that students do not have hunger as an additional barrier to their wellbeing adn academic achievement. 
+In the US, an estimated 11.7 million children are estimated to live in food insecure homes this year (5). Students who experience hunger are reported to experience higher risk of decreased academic performance, more tardy and absent days, and more mental health challenges (4). A robust understanding of school food systems can create data-informed decisions around USDA and state school food policy and on-the-ground management so that students do not have hunger as an additional barrier to their wellbeing and academic achievement. 
 
 # Data Description
 
@@ -188,30 +188,32 @@ total_acf <- acf(monthly_tsib, lag.max = 12)
 
 The results of the autocorrelation function (ACF) indicate that monthly participation in the NSLP for this month is positively correlated with monthly participation in the NSLP for the next two months, and the prior two months with statistical significance. Participation in all of the other months of the year have a positive correlation with the present month, but not of any statistical significance from correlation of 0, as indicated by the blue line indicating 95% confidence interval. 
 
-I wondered if isolating participation data to only students who qualify might change the ACF output, since students who rely on school lunch from one month to the next participate less randlomly due to the 
+I wondered if isolating participation data to only students who qualify might change the ACF output, since I would expect students who qualify for school meals and participate rely on NSLP more regularly as an isolated group, but the ACF plot was about the same! 
 
 ```{r fig.width= 6, fig.height=3}
 total_auto
 ```
 
-The results of my decomposition function autoplot demonstrate a stronger seasonal effect in NSLP participation among all participating students. We can see declines in participation during the summer months, as we would expect but also changes in participation during the school year. I predict that because the data is reported as a monthly total, that there are seasonal decreases in participation during months with school breaks (in winter and spring), and so I am not sure that there is evidence enough to say that the NSLP participating schools and districts feed students differently seasonally. 
+The results of my decomposition function autoplot demonstrate a stronger seasonal effect in NSLP participation among all participating students. We can see declines in participation during the summer months, as we would expect but also changes in participation during the school year. I predict that because the data is reported as a monthly total, that there are seasonal decreases in participation during months with school breaks (in winter and spring). Because of this and the domination of the summer impact to seasonality, I am not sure that there is evidence enough to say that the NSLP participating schools and districts feed students differently seasonally during the school year.
 
-Any seasonal differences between school months were drowned out by the seasonal differences between school months and summer months. To further investigate the seasonal differences in meals served, I tried to also run hypothesis tests comparing total meals served for fall and spring months, fall and winter months, and spring and winter months. 
+Any seasonal differences between school months were drowned out by the seasonal differences between school months and summer months. To further investigate the seasonal differences in meals served, I tried to also run hypothesis tests comparing total meals served for fall and spring months, fall and winter months, and spring and winter months.
 
 ```{r}
-#t test: fall versus rest of school year
+#t test: null hypothesis that mean difference between fall and the rest of the school year is zero
 tidy(t.test(usda_monthly$total_lunches_served[usda_monthly$season == "fall"], usda_monthly$total_lunches_served[usda_monthly$season != "fall" | usda_monthly$season != "summer"]))
 ```
 
 ```{r}
+#t test: null hypothesis that mean difference between winter and the rest of the school year is zero
 tidy(t.test(usda_monthly$total_lunches_served[usda_monthly$season == "winter"], usda_monthly$total_lunches_served[usda_monthly$season != "winter" | usda_monthly$season != "summer"]))
 ```
 
 ```{r}
+#t test: null hypothesis that mean difference between spring and the rest of the school year is zero
 tidy(t.test(usda_monthly$total_lunches_served[usda_monthly$season == "spring"], usda_monthly$total_lunches_served[usda_monthly$season != "spring" | usda_monthly$season != "summer"]))
 ```
 
-Hypothesis testing of differences in mean meals served by season showed no significant differences between school year seasons. I would be curious to run this test if more data were available, as when summer data is excluded, there are only 35 observations in the sample, on the cusp of violating the Central Limit Theorem. With the data I have here, I cannot answer the question "does the the USDA NSLP show seasonality in feeding kids?" for seasons when school is in session. 
+Hypothesis testing of differences in mean meals served by school year season showed no significant differences between school year seasons. I would be curious to run this test if more data were available, as when summer data is excluded, there are only 35 observations in the sample, on the cusp of violating the Central Limit Theorem. With the data I have here, I cannot answer the question "does the the USDA NSLP show seasonality in feeding kids?" for seasons when school is in session. 
 
 ## Impact of Covid on NSLP
 
@@ -233,15 +235,13 @@ covid_df %>%
   gt()
 ```
 
-A Welch two-sample t test comparing the means of of monthly meals served before and during the pandemic had statistically significant results with a p value of `r covid_pval`. This means there is a mean nonzero difference between the number of kids NSLP served before and during the pandemic and there is a less than 1 percent probability of observing a difference as extreme as this if the null (0 difference) were true. 
-
-
+A Welch two-sample t test comparing the means of of monthly meals served before and during the pandemic had statistically significant results with a p value of `r covid_pval`. This means there is a mean nonzero difference between the number of kids NSLP served before and during the pandemic and there is a less than 1 percent probability of observing a difference as extreme as this if the null (0 difference) were true. The confidence interval indicates that with 95% confidence we can estimate the range `r covid_lower_ci` - `r covid_upper_ci` contains the difference in mean participation from brefore and during the pandemic. 
 
 # Next steps and future directions
 
-The USDA's data platform only allows me to access NSLP participation data from 2017 onward. As a next step, I might reach out to their data services to try to obtain data from previous years. 47 months of data are _just_ enough to satisfy the Central Limit Theorem when we exclude summer data, but I wonder if a larger sample size might be better for illuminating differences in the mean monthly number of students served between school months by season. 
+The USDA's data platform only allows me to access NSLP participation data from 2017 onward. As a next step, I might reach out to their data services to try to obtain data from previous years. 47 months of data are _just_ enough to satisfy the Central Limit Theorem when we exclude summer data, but I wonder if a larger sample size might be better for illuminating conclusive differences in the mean monthly number of students served between school months by season. 
 
-Student access to NSLP is vital for supporting equity in U.S. K-12 schools and helping students to be their best, healthiest selves. Understanding seasonality in serving and impacts of school closures on access to this vital resource can help policy-makers and on-the-ground stakeholders to make data-informed decisions that reduce identified gaps in access to school meals. I hope that others continue to make use of the USDA's publicly available national school meal data to continue to improve the ways we understand the ways 
+Student access to NSLP is vital for supporting equity in U.S. K-12 schools and helping students to be their best, healthiest selves. Understanding gaps in feeding kids - from regular dips to national emergency program closures - can help policy-makers and on-the-ground stakeholders to make data-informed decisions that reduce identified gaps in access to school meals. Enhancing NSLP's meals served supports millions of hungry students and their families (5). I hope that others continue to make use of the USDA's publicly available national school meal data to continue to improve the ways we understand USDA program operations in schools. 
 
 # References
 
@@ -249,3 +249,4 @@ Student access to NSLP is vital for supporting equity in U.S. K-12 schools and h
 (2) https://fns-prod.azureedge.net/sites/default/files/resource-files/NSLPFactSheet.pdf
 (3) http://bestpractices.nokidhungry.org/sites/default/files/2020-06/Need%20for%20School%20Nutrition%20Budget%20Relief.pdf
 (4) https://www.karger.com/Article/Pdf/66399
+(5) https://www.ers.usda.gov/webdocs/publications/102076/err-298.pdf?v=3840.6
